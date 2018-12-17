@@ -1,22 +1,13 @@
 package com.company;
 
-import java.net.InetAddress;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.sql.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.mysql.cj.log.Log;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 public class quizServerHandler extends ChannelInboundHandlerAdapter
