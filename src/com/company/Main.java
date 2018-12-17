@@ -22,7 +22,7 @@ public class Main
 
     public static void main(String[] args) throws Exception
     {
-        new Main(5001).run();
+        new Main(5002).run();
     }
 
     public void run() throws Exception
@@ -40,7 +40,7 @@ public class Main
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new ChatServerInitializer(sslCtx));
+                    .childHandler(new quizServerInitializer(sslCtx));
 
             bootstrap.bind(port).sync().channel().closeFuture().sync();
         }

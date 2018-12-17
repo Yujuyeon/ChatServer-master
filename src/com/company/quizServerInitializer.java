@@ -14,12 +14,12 @@ import io.netty.handler.ssl.SslContext;
 
 import java.util.List;
 
-public class ChatServerInitializer extends ChannelInitializer<SocketChannel>
+public class quizServerInitializer extends ChannelInitializer<SocketChannel>
 {
 
     private final SslContext sslCtx;
 
-    public ChatServerInitializer(SslContext sslCtx)
+    public quizServerInitializer(SslContext sslCtx)
     {
         this.sslCtx = sslCtx;
     }
@@ -43,7 +43,7 @@ public class ChatServerInitializer extends ChannelInitializer<SocketChannel>
 
         pipeline.addLast(new StringDecoder());
         pipeline.addLast(new StringEncoder());
-        pipeline.addLast(new ChatServerHandler());
+        pipeline.addLast(new quizServerHandler());
     }
 
 }
