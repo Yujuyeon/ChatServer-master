@@ -15,6 +15,7 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
 
     HashMap<ChannelHandlerContext, String> channelAndID = new HashMap();
     HashMap<String, Boolean> idAndBoolean = new HashMap();
+    private int userAnswer, dbAnswer;
 
     private static final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
@@ -77,9 +78,21 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
 
         System.out.println("channelRead of [SERVER]: " + message);
 
+//        1. 첫입장시 id: 로 시작하는 값을 받음
+//            - id:유저 아이디
+//        2. admin으로 시작하는 값은 퀴즈를 내기 위한 메시지임
+//        3. userAnswer로 시작하는 값은 유저들의 문제 풀이임
+//            - idAndBoolean 해시에 정답자와 오답자를 표기함
+//        4. correntOrNot으로 시작하는 값은 유저들에게 채점을 하기 위한 메시지임
+
+
         if(message.startsWith("id:"))
         {
             message = message.replace("id:","");
+
+            // 인터넷을 재접속하면 channel 값이 바뀔 수 있으므로
+            // 해시맵을 두번 써서 ctx -> id -> bool(퀴즈 정답 유무) 형태로 값을 저장하고 역순으로 값을 불러온다.
+
             channelAndID.put(ctx, message);
             idAndBoolean.put(message, true); //정답자와 오답자를 구별하기 위함
             System.out.println("입장시 아이디 해시에 저장: "+message);
@@ -107,12 +120,15 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
             }
             else if (message.startsWith("userAnswer"))
             {
+//                'userAnswer | 문제 번호 | 사용자 아이디 | 풀이' 형태의 데이터를 받음
+
                 System.out.println("시청자로부터 온 퀴즈 정답: " + message);
-//                '문제 번호 | 사용자 아이디 | 풀이' 형태의 데이터를 받음
                 String[] getAnswer = message.split("\\|");
-                System.out.println("시청자의 답:"+Integer.parseInt(getAnswer[3]));
-                System.out.println(getAnswerFromDB(Integer.parseInt(getAnswer[1].substring(1,2))));
-                if (Integer.parseInt(getAnswer[3]) == getAnswerFromDB(Integer.parseInt(getAnswer[1].substring(1,2))))
+
+                userAnswer = Integer.parseInt(getAnswer[3]);
+                dbAnswer = getAnswerFromDB(Integer.parseInt(getAnswer[1].substring(1,2)));
+
+                if (userAnswer == dbAnswer)
                 {
                     System.out.println(getAnswer[2] + " 정답");
                     idAndBoolean.put(channelAndID.get(ctx), true);
@@ -121,6 +137,25 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
                 {
                     System.out.println(getAnswer[2] + " 오");
                     idAndBoolean.put(channelAndID.get(ctx), false);
+                }
+            }
+
+            else if(message.startsWith("correctOrNot"))
+            {
+                for (Channel channel : channelGroup)
+                {
+                    if (channel != incoming)
+                    {
+                        //메시지 전달.
+                        if(idAndBoolean.get(channelAndID.get(ctx)))
+                        {
+                            channel.writeAndFlush("o");
+                        }
+                        else
+                        {
+                            channel.writeAndFlush("x");
+                        }
+                    }
                 }
             }
 
