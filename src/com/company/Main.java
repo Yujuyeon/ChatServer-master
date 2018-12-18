@@ -41,6 +41,7 @@ public class Main
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new quizServerInitializer(sslCtx));
+            System.out.println(9999);
 
             bootstrap.bind(port).sync().channel().closeFuture().sync();
         }

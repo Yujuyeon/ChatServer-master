@@ -1,6 +1,7 @@
 package com.company;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.sql.*;
 import io.netty.channel.Channel;
@@ -13,14 +14,15 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 public class quizServerHandler extends ChannelInboundHandlerAdapter
 {
 
-    HashMap<ChannelHandlerContext, String> channelAndID = new HashMap();
-    HashMap<String, Boolean> idAndBoolean = new HashMap();
+//    HashMap<String, Channel> idAndChannel = new HashMap();
+//    HashMap<String, Boolean> idAndBoolean = new HashMap();
+//    ArrayList<String> idList = new ArrayList<>();
     private int userAnswer, dbAnswer;
-
+    int chk = 1;
     private static final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
     static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-    static final String DB_URL = "jdbc:mysql://localhost:3306/db?characterEncoding=UTF-8&serverTimezone=UTC";
+    static final String DB_URL = "jdbc:mysql://localhost:3306/lara?characterEncoding=UTF-8&serverTimezone=UTC";
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception
@@ -34,6 +36,7 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
 //            channel.write("[SERVER] - " + incoming.remoteAddress() + "입장합니다.\n");
         }
         channelGroup.add(incoming);
+        System.out.println(channelGroup.size());
     }
 
     @Override
@@ -46,14 +49,14 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
     public void channelActive(ChannelHandlerContext ctx) throws Exception
     {
         // 사용자가 접속했을 때 서버에 표시.
-       System.out.println("User Access! "+ctx.channel().remoteAddress());
-       System.out.println("User Access! "+ ctx.channel().id().asLongText());
+//       System.out.println("User Access! "+ctx.channel().remoteAddress());
+//       System.out.println("User Access! "+ ctx.channel().id().asLongText());
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception
     {
-        System.out.println("handlerRemoved of [SERVER]");
+//        System.out.println("핸들러 제거");
         Channel incoming = ctx.channel();
         for (Channel channel : channelGroup)
         {
@@ -76,7 +79,6 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
         message = (String) msg;
 
 
-        System.out.println("channelRead of [SERVER]: " + message);
 
 //        1. 첫입장시 id: 로 시작하는 값을 받음
 //            - id:유저 아이디
@@ -93,9 +95,23 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
             // 인터넷을 재접속하면 channel 값이 바뀔 수 있으므로
             // 해시맵을 두번 써서 ctx -> id -> bool(퀴즈 정답 유무) 형태로 값을 저장하고 역순으로 값을 불러온다.
 
-            channelAndID.put(ctx, message);
-            idAndBoolean.put(message, true); //정답자와 오답자를 구별하기 위함
-            System.out.println("입장시 아이디 해시에 저장: "+message);
+//            idAndChannel.put(message, ctx.channel());
+//
+//            if(!idList.contains(message))
+//            {
+//                idList.add(message);
+//            }
+//            if(!idAndBoolean.containsKey(message))
+//            {
+//                System.out.println(message+": true ");
+//                idAndBoolean.put(message, true); //정답자와 오답자를 구별하기 위함
+//            }
+//            System.out.println("입장시 아이디 해시에 저장: "+message);
+
+//            for(int i = 0; i < idList.size(); i++)
+//            {
+//                System.out.println("등록된 아이디:" +i + "/" + idList.get(i));
+//            }
         }
 
         else
@@ -105,56 +121,65 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
 //            if(channelAndID.get(ctx).equals("admin"))
             if(message.startsWith("admin"))
             {
-                System.out.println("관리자로부터 메시지");
-                System.out.println(1);
-                for (Channel channel : channelGroup)
+//                System.out.println("관리자로부터 메시지");
+               for (Channel channel : channelGroup)
                 {
                     if (channel != incoming) //자기 한테 또 보내지 않기 위해
                     {
                         //메시지 전달.
-                        System.out.println("퀴즈 전달");
+//                        System.out.println("퀴즈 전달");
                         //channel.writeAndFlush("[" + incoming.remoteAddress() + "/" + incoming.id().toString() + "]" + message + "\n");
-                        channel.writeAndFlush(message.substring(6));
+                        channel.writeAndFlush("goQuiz"+message.substring(6));
                     }
                 }
             }
             else if (message.startsWith("userAnswer"))
             {
 //                'userAnswer | 문제 번호 | 사용자 아이디 | 풀이' 형태의 데이터를 받음
-
-                System.out.println("시청자로부터 온 퀴즈 정답: " + message);
+//                System.out.println("치널 크기"+channelGroup.size());
+//                System.out.println("시청자로부터 온 퀴즈 정답: " + message);
                 String[] getAnswer = message.split("\\|");
 
                 userAnswer = Integer.parseInt(getAnswer[3]);
-                dbAnswer = getAnswerFromDB(Integer.parseInt(getAnswer[1].substring(1,2)));
-
-                if (userAnswer == dbAnswer)
+                dbAnswer = getAnswerFromDB(Integer.parseInt(getAnswer[1].substring(2,3)));
+                for (Channel channel : channelGroup)
                 {
-                    System.out.println(getAnswer[2] + " 정답");
-                    idAndBoolean.put(channelAndID.get(ctx), true);
-                }
-                else
-                {
-                    System.out.println(getAnswer[2] + " 오");
-                    idAndBoolean.put(channelAndID.get(ctx), false);
+                    if (channel != incoming) //자기 한테 또 보내지 않기 위해
+                    {
+                        if (userAnswer == dbAnswer)
+                        {
+                            System.out.println(getAnswer[2] + " 정답");
+                            channel.writeAndFlush("퀴즈채점 정답ㅇㅇㅇ");
+//                            idAndBoolean.put(getAnswer[2], true);
+                        }
+                        else
+                        {
+                            System.out.println(getAnswer[2] + " 오답");
+                            channel.writeAndFlush("퀴즈채점 오답ㄴㄴㄴ");
+//                            idAndBoolean.put(getAnswer[2], false);
+                        }
+                    }
                 }
             }
 
-            else if(message.startsWith("correctOrNot"))
+            else if(message.startsWith("score"))
             {
                 for (Channel channel : channelGroup)
                 {
                     if (channel != incoming)
                     {
                         //메시지 전달.
-                        if(idAndBoolean.get(channelAndID.get(ctx)))
-                        {
-                            channel.writeAndFlush("o");
-                        }
-                        else
-                        {
-                            channel.writeAndFlush("x");
-                        }
+                        channel.writeAndFlush("퀴즈채점 ㅎㅎㅎ");
+//                        if(idAndBoolean.get(channelAndID.get(ctx.channel())))
+//                        {
+//                            System.out.println(channelAndID.get(ctx.channel()) + "님 정답");
+//                            channel.writeAndFlush("정답o");
+//                        }
+//                        else
+//                        {
+//                            System.out.println(channelAndID.get(ctx.channel()) + "님 오답");
+//                            channel.writeAndFlush("오답x");
+//                        }
                     }
                 }
             }
@@ -165,6 +190,13 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
             }
         }
 
+        System.out.println("channelRead of [SERVER]: " + message);
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception
+    {
+        super.channelUnregistered(ctx);
     }
 
     private int getAnswerFromDB(int quizNumber)
@@ -179,7 +211,7 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL, "johnny", "sql");
             stmt = conn.createStatement();
-            sql = "select answer from quiz where quizNumber = " + quizNumber;
+            sql = "select answer from quiz where id = " + quizNumber;
             ResultSet rs = stmt.executeQuery(sql);
             rs.next();
             answer = rs.getInt("answer");
