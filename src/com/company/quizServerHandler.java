@@ -140,6 +140,16 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
                 }
             }
         }
+        else if(message.equals("test"))
+        {
+            for (Channel channel : channelGroup)
+            {
+                if (channel == incoming) //자기 한테 또 보내지 않기 위해
+                {
+                    channel.writeAndFlush("test done from server");
+                }
+            }
+        }
 
         if ("bye".equals(message.toLowerCase()))
         {
