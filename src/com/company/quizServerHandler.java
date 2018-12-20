@@ -1,10 +1,12 @@
 package com.company;
 
-
 import java.sql.*;
+import java.util.ArrayList;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ServerChannel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -20,6 +22,8 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
     static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
     static final String DB_URL = "jdbc:mysql://localhost:3306/lara?characterEncoding=UTF-8&serverTimezone=UTC";
 
+    private boolean winnerOrNot;
+
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception
     {
@@ -28,7 +32,9 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
         {
             channelGroup.add(incoming);
         }
+        winnerOrNot = true;
         System.out.println("채널 그룹 크기: "+channelGroup.size());
+
     }
 
     @Override
@@ -36,11 +42,6 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
     {
         System.out.println("핸들러 제거");
         Channel incoming = ctx.channel();
-        for (Channel channel : channelGroup)
-        {
-            //사용자가 나갔을 때 기존 사용자에게 알림
-            //channel.write("[SERVER] - " + incoming.remoteAddress() + "has left!\n");
-        }
         channelGroup.remove(incoming);
     }
 
@@ -107,12 +108,18 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
                     {
                         System.out.println(getAnswer[2] + " 정답");
                         channel.writeAndFlush("o");
+
+                        if(winnerOrNot)
+                        {
+                            winnerOrNot = true;
+                        }
 //                            idAndBoolean.put(getAnswer[2], true);
                     }
                     else
                     {
                         System.out.println(getAnswer[2] + " 오답");
                         channel.writeAndFlush("x");
+                        winnerOrNot = false;
 //                            idAndBoolean.put(getAnswer[2], false);
                     }
                 }
@@ -140,11 +147,23 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
                 }
             }
         }
-        else if(message.equals("test"))
+
+        else if(message.equals("winnerOrNot"))
         {
+            if(winnerOrNot)
+            {
+                ctx.writeAndFlush("최종 우승자!");
+            }
+        }
+
+//       테스 보냄 사람한테만 보냄
+        else if(message.startsWith("test"))
+        {
+            System.out.println("in");
+
             for (Channel channel : channelGroup)
             {
-                if (channel == incoming) //자기 한테 또 보내지 않기 위해
+                if (channel == incoming) // 자가 테스트
                 {
                     channel.writeAndFlush("test done from server");
                 }

@@ -10,9 +10,14 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 public class Main
 {
     private final int port;
+    HashMap test = new HashMap();
+    public ArrayList test2 = new ArrayList();
 
     public Main(int port)
     {
