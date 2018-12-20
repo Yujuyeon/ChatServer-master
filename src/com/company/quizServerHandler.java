@@ -22,7 +22,7 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
     static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
     static final String DB_URL = "jdbc:mysql://localhost:3306/lara?characterEncoding=UTF-8&serverTimezone=UTC";
 
-    private boolean winnerOrNot;
+    private boolean IamWinner;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception
@@ -32,9 +32,8 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
         {
             channelGroup.add(incoming);
         }
-        winnerOrNot = true;
+        IamWinner = true;
         System.out.println("채널 그룹 크기: "+channelGroup.size());
-
     }
 
     @Override
@@ -109,17 +108,18 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
                         System.out.println(getAnswer[2] + " 정답");
                         channel.writeAndFlush("o");
 
-                        if(winnerOrNot)
-                        {
-                            winnerOrNot = true;
-                        }
-//                            idAndBoolean.put(getAnswer[2], true);
+                        System.out.println("유저: "+ channel.id());
+                        IamWinner = true;
+//                        채점 시스템
+//                        한번이라도 오답이 되면 탈락함
+//                        중간에 들어온 사람에 대한 예외처리 필요
+//                        배열등을 만들어서 극복필요
                     }
                     else
                     {
                         System.out.println(getAnswer[2] + " 오답");
                         channel.writeAndFlush("x");
-                        winnerOrNot = false;
+                        IamWinner = false;
 //                            idAndBoolean.put(getAnswer[2], false);
                     }
                 }
@@ -128,42 +128,51 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
 
         else if(message.equals("score"))
         {
+            System.out.println("호스: "+ incoming.id());
             for (Channel channel : channelGroup)
             {
                 if (channel != incoming)
                 {
-                    //메시지 전달.
-                    channel.writeAndFlush("score");
-//                        if(idAndBoolean.get(channelAndID.get(ctx.channel())))
-//                        {
-//                            System.out.println(channelAndID.get(ctx.channel()) + "님 정답");
-//                            channel.writeAndFlush("정답o");
-//                        }
-//                        else
-//                        {
-//                            System.out.println(channelAndID.get(ctx.channel()) + "님 오답");
-//                            channel.writeAndFlush("오답x");
-//                        }
+                    channel.writeAndFlush(message);
                 }
             }
         }
 
-        else if(message.equals("winnerOrNot"))
+        else if(message.equals("isWinner"))
         {
-            if(winnerOrNot)
+            for(Channel channel : channelGroup)
             {
-                ctx.writeAndFlush("최종 우승자!");
+                if(channel != incoming)
+                {
+                    System.out.println(channel.id());
+                    channel.writeAndFlush("isWinner");
+                }
             }
         }
 
-//       테스 보냄 사람한테만 보냄
+        else if(message.equals("amIwinner"))
+        {
+            System.out.println("1111111111111");
+            for(Channel channel : channelGroup)
+            {
+                System.out.println("aaaaaaaaaaaa"+channel.id());
+                System.out.println(IamWinner+"sadfdsdfsdf");
+                if(channel == incoming && IamWinner)
+                {
+                    System.out.println("bbbbbbbbbb"+channel.id());
+                    channel.writeAndFlush("winner");
+                }
+            }
+        }
+
+//       테스 보냄 나한테만 보냄
         else if(message.startsWith("test"))
         {
             System.out.println("in");
 
             for (Channel channel : channelGroup)
             {
-                if (channel == incoming) // 자가 테스트
+                if (channel == incoming)
                 {
                     channel.writeAndFlush("test done from server");
                 }
@@ -235,6 +244,4 @@ public class quizServerHandler extends ChannelInboundHandlerAdapter
         return dataFromQuizDB;
 
     }
-
 }
-
